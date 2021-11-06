@@ -1,10 +1,10 @@
 /*Napisati proceduru koja će ispisati sve podatke o svim radnicima.
 Gdje se nalazi upravo izrađena procedura?*/
-DELIMITER
+DELIMITER //
 CREATE PROCEDURE ispisiRadnike()
 BEGIN
-SELECT *
-FROM radnik;
+    SELECT *
+    FROM radnik;
 END;
 // /* oznaka ";" prije oznake "//" u ovom retku, može se i ne mora navoditi.*/
 DELIMITER ;
@@ -18,11 +18,19 @@ CREATE PROCEDURE ispisiKlijente()
 BEGIN
     SELECT * FROM klijent;
 END;
-//
 DELIMITER ;
 
 /*Poruku o ovakvoj vrsti pogreške dobijemo tek prilikom poziva procedure, ne i kod same izrade procedure.*/
 CALL ispisiKlijente();
+
+DELIMITER //
+CREATE PROCEDURE ispisiMjesta()
+BEGIN
+    SELECT * FROM mjesto;
+END //
+DELIMITER ;
+
+CALL ispisiMjesta();
 
 
 /*Pregled i dohvat postojećih procedura: */
@@ -59,7 +67,6 @@ DELIMITER ;
 
 CALL dohvatiRadnikePremaOdjelu('Balansiranje guma');
 
-
 /*Napisati proceduru koja će vratiti broj radnika u zadanom odjelu.*/
 DELIMITER //
 CREATE PROCEDURE prebrojiRadnikeUOdjelu(IN naziv VARCHAR(50), OUT broj INT)
@@ -70,7 +77,8 @@ BEGIN
              JOIN odjel
                   ON radnik.sifOdjel = odjel.sifOdjel
     WHERE nazivOdjel = naziv;
-END //
+END
+//
 DELIMITER ;
 
 CALL prebrojiRadnikeUOdjelu('Balansiranje guma', @n);
@@ -204,6 +212,7 @@ BEGIN
 END//
 DELIMITER ;
 
+
 /*Poziv funkcije*/
 SELECT promakni(19);
 
@@ -234,7 +243,6 @@ DELIMITER ;
 
 /*Poziv funkcije*/
 SELECT brojiKlijente(277);
-
 
 
 
