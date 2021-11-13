@@ -5,102 +5,102 @@ tog klijenta. Prikazati i sveukupan broj sati za sve klijente preko izlaznog
 parametra.
 Napisati smisleni primjer poziva ovog pohranjenog zadatka.*/
 
-DELIMITER //
-DROP PROCEDURE IF EXISTS vratiNalogeSate;
-CREATE PROCEDURE vratiNalogeSate(IN sifra INT, OUT sumaSati INT)
+DELIMITER #
+DROP PROCEDURE IF EXISTS vratiKlijenta;
+CREATE PROCEDURE vratiKlijenta(IN sifra varchar(50), OUT total_sati int)
 BEGIN
-    SELECT k.jmbgKlijent,
-           k.imeKlijent,
-           k.prezimeKlijent,
-           YEAR(k.datUnosKlijent) AS god_unosa,
-           agr.broj_naloga,
-           agr.suma_sati
-    FROM (SELECT sifKlijent, SUM(OstvareniSatiRada) suma_sati, COUNT(*) broj_naloga
-          FROM nalog n
-          GROUP BY sifKlijent) agr
-             JOIN klijent k ON k.sifKlijent = agr.sifKlijent
-    WHERE k.sifKlijent = sifra;
+    SELECT jmbgKlijent,
+           imeKlijent,
+           prezimeKlijent,
+           YEAR(datUnosKlijent) godina_unosa,
+           nalog_agr.broj_naloga,
+           nalog_agr.suma_sati
+    FROM (SELECT sifKlijent, COUNT(*) broj_naloga, SUM(OstvareniSatiRada) suma_sati
+          FROM nalog
+          WHERE sifKlijent = sifra
+          GROUP BY sifKlijent
+         ) nalog_agr
+             NATURAL JOIN klijent;
 
-    SELECT SUM(OstvareniSatiRada) ukupno_sati
-    INTO sumaSati
-    FROM nalog;
-END //
+    SELECT SUM(OstvareniSatiRada) INTO total_sati FROM nalog;
+END #
 DELIMITER ;
 
-CALL vratiNalogeSate(1167, @tot_sati);
-SELECT @tot_sati;
+CALL vratiKlijenta(1160, @ukupno_sati);
+SELECT @ukupno_sati;
+
 
 /* 2. Napisati proceduru koja će za zadanu šifru odjela i mjesec vratiti :
-šifru radnika, ime i prezime radnika spojeno, broj_nalga, prosječne sate rada, koef plaće,
+šifru radnika, ime i prezime radnika spojeno, broj_naloga, prosječne sate rada, koef plaće,
 iznos osnovice te plaću na 2 decimale (plaća je umnožak osnovice i koef plaće).
 Napisati smisleni primjer poziva ovog pohranjenog zadatka.*/
-DELIMITER //
+
+DELIMITER #
 DROP PROCEDURE IF EXISTS vratiRadnikeOdjela;
-CREATE PROCEDURE vratiRadnikeOdjela(IN zadanaSifra INT, IN bezMjeseca INT)
+CREATE PROCEDURE vratiRadnikeOdjela(sifra_odjela varchar(50), bez_mjeseca int)
 BEGIN
     SELECT r.sifRadnik,
-           CONCAT_WS(' ', r.imeRadnik, r.prezimeRadnik) AS IME_PREZIME,
-           n_agr.broj_naloga,
-           n_agr.prosj_sati,
-           r.KoefPlaca,
-           r.IznosOsnovice,
-           ROUND(r.IznosOsnovice * r.KoefPlaca, 2)      AS placa
-    FROM (SELECT sifRadnik, COUNT(*) broj_naloga, AVG(OstvareniSatiRada) AS prosj_sati
-          FROM nalog
-          WHERE MONTH(datPrimitkaNalog) <> bezMjeseca
-          GROUP BY sifRadnik
-         ) n_agr
-             JOIN radnik r ON r.sifRadnik = n_agr.sifRadnik
-             JOIN odjel o ON r.sifOdjel = o.sifOdjel
-    WHERE o.sifOdjel = zadanaSifra;
-END //
+           CONCAT_WS(' ', r.imeRadnik, r.prezimeRadnik) AS ime_prezime_rad,
+           COUNT(*)                                        broj_naloga,
+           AVG(OstvareniSatiRada)                          prosj_sati_rada,
+           KoefPlaca,
+           IznosOsnovice,
+           ROUND(IznosOsnovice * KoefPlaca, 2)          AS placa_radnika
+    FROM nalog n
+             JOIN radnik r ON n.sifRadnik = r.sifRadnik
+    WHERE r.sifOdjel = sifra_odjela
+      AND MONTH(datPrimitkaNalog) != bez_mjeseca
+    GROUP BY r.sifRadnik;
+END #
 DELIMITER ;
 
 CALL vratiRadnikeOdjela(2, 7);
-
 
 /* 3. Napisati proceduru koja će za zadani raspon prosječnih ocjena (ocjena_od,
 ocjena_do) prikazati po kolegijima sljedeće podatke:
 naziv kolegija, id smjera kojem kolegij pripada, id kolegija, broj položenih ispita i
 prosječnu ocjenu kolegija
 Napisati smisleni primjer poziva ovog pohranjenog zadatka.*/
-DELIMITER //
-DROP PROCEDURE IF EXISTS vratiKolegije;
-CREATE PROCEDURE vratiKolegije(IN od DOUBLE, IN do DOUBLE)
+
+DELIMITER #
+DROP PROCEDURE IF EXISTS kolegijiPoRasponuOcjena;
+CREATE PROCEDURE kolegijiPoRasponuOcjena(ocjena_min double, ocjena_max double)
 BEGIN
     SELECT k.naziv, k.idSmjer, agr.*
-    FROM (SELECT o.idKolegij, COUNT(*) broj_ispita, AVG(ocjena) prosj_ocjena
-          FROM ocjene o
-          GROUP BY o.idKolegij
-          HAVING prosj_ocjena BETWEEN od AND do
-         ) agr
+    FROM (SELECT idKolegij, COUNT(*) broj_ispita, AVG(ocjena) prosj_ocjena
+          FROM ocjene
+          WHERE ocjena BETWEEN ocjena_min AND ocjena_max
+          GROUP BY idKolegij) agr
              JOIN kolegiji k ON k.id = agr.idKolegij
-    ORDER BY prosj_ocjena;
-END //
+    ORDER BY agr.prosj_ocjena;
+END #
 DELIMITER ;
 
-CALL vratiKolegije(2.2, 3.3);
+
+CALL kolegijiPoRasponuOcjena(2.2, 3.3);
 
 
 /* 4. Napisati funkciju koja će za zadanu šifru kvara ispisati koliko je bilo naloga
 po toj šifri kvara, prema sljedećem formatu. 'Broj naloga je: n.'
 Napisati smisleni primjer poziva ovog pohranjenog zadatka.*/
-DELIMITER //
-DROP FUNCTION IF EXISTS brojiNaloge;
-CREATE FUNCTION brojiNaloge(trazenaSifra INT) RETURNS VARCHAR(50)
+DELIMITER #
+DROP FUNCTION IF EXISTS naloziZaKvar;
+CREATE FUNCTION naloziZaKvar(zadaniKvar int) RETURNS varchar(50)
     DETERMINISTIC
 BEGIN
-    DECLARE broj_naloga varchar(50) DEFAULT NULL;
+    DECLARE broj_naloga int DEFAULT 0;
+
     SELECT COUNT(*)
     INTO broj_naloga
     FROM nalog
-    WHERE sifKvar = trazenaSifra;
+    WHERE sifKvar = zadaniKvar;
 
     RETURN CONCAT('Broj naloga je: ', broj_naloga);
-END //
+
+END #
 DELIMITER ;
 
-SELECT brojiNaloge(12) AS Broj;
+SELECT naloziZaKvar(2);
 
 
 /* 5. Napisati funkciju koja će za zadanu ocjenu ispisati tu ocjenu, koliko je bilo
@@ -125,4 +125,3 @@ END #
 DELIMITER ;
 
 SELECT ocjenaStats(2)
-
