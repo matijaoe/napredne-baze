@@ -5,8 +5,6 @@ kao ulaz u funkciju zada ocjena izvan opsega, funkcija treba vratiti poruku:
 'Ocjenom X ocijenjeno Y studenata' ('X' i 'Y' zamijeniti s odgovarajućim
 vrijednostima).
 Napisati smisleni primjer poziva ovog pohranjenog zadatka. */
-
-
 DELIMITER ##
 DROP FUNCTION IF EXISTS brojOcjena;
 CREATE FUNCTION brojOcjena(zadana_ocjena INT) RETURNS VARCHAR(50)

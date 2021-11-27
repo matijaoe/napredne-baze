@@ -151,13 +151,31 @@ pojedinačno. Prikazati i prosječnu ocjenu smjera kao i standardnu devijaciju.
 Ukoliko zadani OIB ne postoji u tablici USTANOVE, procedura vraća poruku:
 "Nepostojeći OIB ustanove.".
 Napisati smisleni primjer poziva ovog pohranjenog zadatka.*/
-DELIMITER ##
-DROP PROCEDURE IF EXISTS zad7;
-CREATE PROCEDURE zad7(IN arg1 INT, OUT arg2 INT)
+DELIMITER //
+DROP PROCEDURE IF EXISTS Ustanove //
+CREATE PROCEDURE Ustanove(IN oib_u CHAR(11) )
 BEGIN
-
-END ##
+    IF oib_u IN (SELECT oib FROM ustanove)
+    THEN
+        SELECT s.id, s.naziv,
+               SUM(CASE WHEN o.ocjena=1 THEN 1 ELSE 0 END ) AS OC_1,
+-- Count(CASE WHEN o.ocjena=1 THEN 900 ELSE null END) AS OC_1_1,
+               SUM(CASE WHEN o.ocjena=2 THEN 1 ELSE 0 END ) AS OC_2,
+               SUM(CASE WHEN o.ocjena=3 THEN 1 ELSE 0 END ) AS OC_3,
+               SUM(CASE WHEN o.ocjena=4 THEN 1 ELSE 0 END ) AS OC_4,
+               SUM(CASE WHEN o.ocjena=5 THEN 1 ELSE 0 END ) AS OC_5,
+               ROUND(AVG(o.ocjena),2) AS AVG_smjera,
+               ROUND(STD(o.ocjena),2) AS STD_smjera
+        FROM smjerovi s INNER JOIN kolegiji k ON s.id = k.idSmjer
+                        INNER JOIN ocjene o ON k.id = o.idKolegij
+        WHERE s.oibUstanova = oib_u
+        GROUP BY s.id, s.naziv
+        ORDER BY 7 DESC ;
+    ELSE SELECT 'Nepostojeći OIB ustanove. ' AS Poruka;
+    END IF;
+END;
+//
 DELIMITER ;
-
-CALL zad7(0, @a);
-SELECT @a;
+/*Poziv procedure*/
+CALL Ustanove('08814003451');
+CALL Ustanove('99999999999');
