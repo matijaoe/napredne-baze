@@ -189,3 +189,126 @@ END ##
 DELIMITER ;
 
 CALL kvarovi_nalozi(2016);
+
+
+/* 5. Napisati funkciju koja za zadani smjer i oznaku smanjenja ('S') tj. povećanja ('P'),
+smanjuje ili povećava sve ocjene studentima odabranog smjera. Ocjenu 1 ne može smanjiti
+a ocjenu 5 ne može povećati. Oznake smanjenja/povećanja moraju biti slova S ili P (mala
+ili velika).
+Funkcija mora vratiti broj studenata koje je dohvatila i obradila (odvojeno smanenje /
+povećanje).
+Zadatak riješiti pomoću kursora. Napisati primjer poziva procedure.*/
+DELIMITER ##
+DROP FUNCTION IF EXISTS korigirajOcjene;
+CREATE FUNCTION korigirajOcjene(zadanIdSmjera INT, oznaka char(1)) RETURNS VARCHAR(50)
+    DETERMINISTIC
+BEGIN
+    DECLARE dohvaceno, smanjeno, povecano int DEFAULT 0;
+    DECLARE c_jmbag varchar(50) DEFAULT NULL;
+    DECLARE kraj boolean DEFAULT FALSE;
+    DECLARE kur CURSOR FOR (SELECT s.jmbag
+                            FROM studenti s
+                                     JOIN ocjene o ON s.jmbag = o.jmbagStudent
+                            WHERE s.idSmjer = zadanIdSmjera);
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET kraj = TRUE;
+
+    IF UPPER(oznaka) NOT IN ('S', 'P') THEN
+        RETURN 'Neispravna oznaka smanjenja/povećanja.';
+    END IF;
+
+    OPEN kur;
+    SELECT FOUND_ROWS() INTO dohvaceno;
+
+    petlja:
+    LOOP
+        FETCH kur INTO c_jmbag;
+
+        IF kraj = TRUE THEN
+            LEAVE petlja;
+        END IF;
+
+        CASE WHEN UPPER(oznaka) = 'S' THEN
+            UPDATE ocjene
+            SET ocjena = ocjena - 1
+            WHERE jmbagStudent = c_jmbag
+              AND ocjena > 1;
+            SET smanjeno = smanjeno + 1;
+
+            WHEN UPPER(oznaka) = 'P' THEN
+                UPDATE ocjene
+                SET ocjena = ocjena + 1
+                WHERE jmbagStudent = c_jmbag
+                  AND ocjena < 5;
+                SET povecano = povecano + 1;
+            END CASE;
+    END LOOP;
+
+    CLOSE kur;
+
+    RETURN CONCAT('Dohvaćeno: ', dohvaceno, ' Smanjeno: ', smanjeno, ' Povećano: ', povecano);
+END ##
+DELIMITER ;
+
+SELECT korigirajOcjene(3, 'P');
+SELECT korigirajOcjene(3, 'S');
+SELECT korigirajOcjene(1, 'S');
+
+
+/* 6. Napisati funkciju koja za zadani šifru kvara označava sve klijente čiji je udio
+ostvarenih sati rada u ukupnim satima (za taj kvar) veći od 5%. Ako šifra kvara nije u tbl
+NALOZI vraća poruku o nepostojanju šifre.
+Klijente označava tako da im iza prezimena doda oznaku ' VIP - % udio= ' i iznos udjela u %.
+Funkcija mora vratiti broj klijenata koje je dohvatila i obradila.
+Zadatak riješiti pomoću kursora. Napisati primjer poziva procedure.*/
+DELIMITER ##
+DROP FUNCTION IF EXISTS oznaciKlijente;
+CREATE FUNCTION oznaciKlijente(zadanaSifra INT) RETURNS VARCHAR(50)
+    DETERMINISTIC
+BEGIN
+    DECLARE dohvaceno, obradeno int DEFAULT 0;
+    DECLARE c_sif_klijent INT DEFAULT NULL;
+    DECLARE c_udio decimal(4, 2) DEFAULT NULL;
+    DECLARE kraj BOOLEAN DEFAULT FALSE;
+    DECLARE kur CURSOR FOR (
+        SELECT n.sifKlijent,
+               SUM(n.OstvareniSatiRada) / (SELECT SUM(OstvareniSatiRada)
+                                           FROM nalog
+                                           WHERE sifKvar = zadanaSifra) udio
+        FROM nalog n
+                 JOIN klijent k ON n.sifKlijent = k.sifKlijent
+        WHERE n.sifKvar = zadanaSifra
+        GROUP BY n.sifKlijent
+        HAVING udio > 0.05
+    );
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET kraj = TRUE;
+
+    IF zadanaSifra NOT IN (SELECT DISTINCT sifKvar FROM nalog ORDER BY sifKvar) THEN
+        RETURN 'Šifra kvara ne postoji';
+    END IF;
+
+    OPEN kur;
+    SELECT FOUND_ROWS() INTO dohvaceno;
+
+    petlja:
+    LOOP
+        FETCH kur INTO c_sif_klijent, c_udio;
+
+        IF kraj = TRUE THEN
+            LEAVE petlja;
+        END IF;
+
+        UPDATE klijent
+        SET prezimeKlijent = CONCAT(prezimeKlijent, ' VIP - % udio= ', c_udio)
+        WHERE sifKlijent = c_sif_klijent;
+
+        SET obradeno = obradeno + 1;
+
+    END LOOP;
+
+    CLOSE kur;
+
+    RETURN CONCAT('Dohvaceno: ', dohvaceno, ' | Obradeno: ', obradeno);
+END ##
+DELIMITER ;
+
+SELECT oznaciKlijente(5);
