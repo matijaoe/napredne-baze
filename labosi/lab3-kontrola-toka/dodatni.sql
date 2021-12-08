@@ -100,7 +100,7 @@ BEGIN
 END ##
 DELIMITER ;
 
-SELECT zadatak3(1210);
+SELECT zadatak3(1133);
 
 
 /* 6. Napisati proceduru koja za zadanu šifru smjera ispisuje studente s tog

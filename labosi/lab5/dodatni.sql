@@ -93,6 +93,30 @@ COMMIT;
 SET AUTOCOMMIT = 1;
 
 
+/* 4. U bazi autoradionica:
+Napisati transakciju koja će svim klijentima iza prezimena dodati oznaku '- VIP' i ime postaviti na velika slova
+ako su do sada (po nalozima) imali više od 100 sati rada.
+Ukoliko su imali manje ili jednako 100 sati rada dobivaju samo oznaku '-REGULAR' iza prezimena.
+Potrebno je potvrditi obje promjene.*/
+SELECT *
+FROM klijent;
+
+
+SET AUTOCOMMIT = 0;
+BEGIN;
+UPDATE klijent
+SET prezimeKlijent = CONCAT(UPPER(prezimeKlijent), '- VIP')
+WHERE sifKlijent IN (SELECT sifKlijent FROM nalog GROUP BY sifKlijent HAVING SUM(OstvareniSatiRada) > 100);
+
+SAVEPOINT tocka;
+UPDATE klijent
+SET prezimeKlijent = CONCAT(prezimeKlijent, '- REGULAR')
+WHERE sifKlijent IN (SELECT sifKlijent FROM nalog GROUP BY sifKlijent HAVING SUM(OstvareniSatiRada) <= 100);
+ROLLBACK TO SAVEPOINT tocka;
+COMMIT;
+SET AUTOCOMMIT = 1;
+
+
 /* 8. U bazi studenti:
 Napisati transakciju koja će svim kolegijima iza naziva kolegija dodati oznaku '- AVG > 3.5' ako su imali prosjek veći od 3.5 i
 više od 1 položenog ispita.
@@ -123,3 +147,5 @@ SET AUTOCOMMIT = 1;
 
 SELECT *
 FROM kolegiji;
+
+
