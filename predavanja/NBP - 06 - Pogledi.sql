@@ -104,7 +104,7 @@ SELECT *
 FROM radnik_view;
 SELECT *
 FROM radnik;
---vidljivo je su se ažuriranjem podataka u pogledu ažurirali i podatci u bazi
+-- vidljivo je su se ažuriranjem podataka u pogledu ažurirali i podatci u bazi
 
 INSERT INTO radnik_view (sifRadnik, imeRadnik, prezimeRadnik, pbrStan, sifOdjel)
 VALUES (519, 'Ivan', 'Horvat', 331000, 5);
@@ -114,7 +114,9 @@ FROM radnik_view
 WHERE sifOdjel = 7;
 
 
-/* Izraditi pogled recent_activity koji će prikazivati aktivnosti upisa studenata na smjer te polaganja kolegija. Za svaki zapis je potrebno ispisati o kojoj aktivnosti je riječ, podatke o studentu te opis sa nazivom kolegija ili smjera. Koristeći pogled potrebno je ispisati ispravno sortirane aktivnosti počevši od najnovije. */
+/* Izraditi pogled recent_activity koji će prikazivati aktivnosti upisa studenata na smjer te polaganja kolegija.
+   Za svaki zapis je potrebno ispisati o kojoj aktivnosti je riječ, podatke o studentu te opis sa nazivom kolegija ili smjera.
+   Koristeći pogled potrebno je ispisati ispravno sortirane aktivnosti počevši od najnovije. */
 
 CREATE OR REPLACE VIEW recent_activity AS
 SELECT datumUpisa AS datum, 'upisan student', CONCAT(ime, " ", prezime, " ", jmbag) AS student, smjerovi.naziv AS opis

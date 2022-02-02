@@ -8,6 +8,8 @@ u suprotnom slučaju postaviti taj ključ na sljedeću najveću vrijednost.
 Napisati instrukciju koja će aktivirati okidač.
 */
 
+
+
 DELIMITER //
 DROP TRIGGER IF EXISTS unosRadnika //
 CREATE TRIGGER unosRadnika

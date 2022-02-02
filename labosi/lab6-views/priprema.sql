@@ -4,7 +4,6 @@ tablice nalog, pogled mora vraćati i (samo) ime i prezime klijenta.
 Ispisati cijeli skup podataka kojeg vraća pogled (napisati poziv pogleda).
 Očekujemo ispis kao u nastavku. */
 
-
 CREATE OR REPLACE VIEW nalozi_druge_polovice_prosinca AS
 SELECT n.*, r.imeRadnik, r.prezimeRadnik
 FROM nalog n
